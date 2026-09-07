@@ -5,13 +5,9 @@ export const config = {
 console.log("ReviewGenie Loaded")
 
 function injectButton() {
-  if (!window.location.pathname.includes("/pull/")) {
-    return
-  }
+  if (!window.location.pathname.includes("/pull/")) return
 
-  if (document.getElementById("reviewgenie-btn")) {
-    return
-  }
+  if (document.getElementById("reviewgenie-btn")) return
 
   const btn = document.createElement("button")
 
@@ -28,9 +24,7 @@ function injectButton() {
     color: "white",
     border: "2px solid white",
     borderRadius: "8px",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: "bold"
+    cursor: "pointer"
   })
 
   btn.onclick = () => {
@@ -43,10 +37,12 @@ function injectButton() {
 }
 
 function extractDiff() {
-  const codeBlocks = document.querySelectorAll(".blob-code")
+  const diffContainers = document.querySelectorAll(
+    '[data-testid="diff-content"]'
+  )
 
-  const diff = Array.from(codeBlocks)
-    .map((block) => block.textContent || "")
+  const diff = Array.from(diffContainers)
+    .map((container) => container.textContent || "")
     .join("\n")
 
   return diff
@@ -64,23 +60,15 @@ function extractPRData() {
   const parts = window.location.pathname.split("/")
 
   const owner = parts[1] || ""
-
   const repository = parts[2] || ""
 
-const changedFiles = Array.from(
-  document.querySelectorAll(
-    '[data-testid="progressive-diffs-list"] a'
+  const changedFiles = Array.from(
+    document.querySelectorAll(
+      '[data-testid="progressive-diffs-list"] a'
+    )
   )
-)
-  .map((el) => el.textContent?.trim())
-  .filter(Boolean)
-
-console.log("Changed Files:", changedFiles)
-
-console.log(
-  "Progressive Diffs:",
-  document.querySelector('[data-testid="progressive-diffs-list"]')
-)
+    .map((el) => el.textContent?.trim())
+    .filter(Boolean)
 
   const diff = extractDiff()
 
@@ -116,12 +104,11 @@ function showSidebar(prData: any) {
     right: "0",
     width: "400px",
     height: "100vh",
-    background: "#ffffff",
+    background: "#fff",
     borderLeft: "1px solid #ddd",
     zIndex: "2147483647",
     padding: "20px",
-    overflowY: "auto",
-    boxShadow: "-4px 0 12px rgba(0,0,0,0.15)"
+    overflowY: "auto"
   })
 
   sidebar.innerHTML = `
@@ -137,9 +124,22 @@ function showSidebar(prData: any) {
 
     <ul>
       ${prData.changedFiles
-        .map((file: string) => `<li>${file}</li>`)
+        .map((file) => `<li>${file}</li>`)
         .join("")}
     </ul>
+
+    <h3>Diff Preview</h3>
+
+    <pre style="
+      white-space: pre-wrap;
+      background:#f5f5f5;
+      padding:10px;
+      border-radius:8px;
+      max-height:250px;
+      overflow:auto;
+    ">
+${prData.diff.substring(0, 1000)}
+    </pre>
   `
 
   document.body.appendChild(sidebar)
