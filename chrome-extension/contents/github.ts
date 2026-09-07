@@ -5,9 +5,13 @@ export const config = {
 console.log("ReviewGenie Loaded")
 
 function injectButton() {
-  if (!window.location.pathname.includes("/pull/")) return
+  if (!window.location.pathname.includes("/pull/")) {
+    return
+  }
 
-  if (document.getElementById("reviewgenie-btn")) return
+  if (document.getElementById("reviewgenie-btn")) {
+    return
+  }
 
   const btn = document.createElement("button")
 
@@ -16,26 +20,60 @@ function injectButton() {
 
   Object.assign(btn.style, {
     position: "fixed",
-    top: "120px",
+    top: "20px",
     right: "20px",
-    zIndex: "999999",
+    zIndex: "2147483647",
     padding: "12px 20px",
     background: "#2563eb",
     color: "white",
     border: "none",
     borderRadius: "8px",
     cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: "600"
+    fontWeight: "bold"
   })
 
   btn.onclick = () => {
-    alert("Review Started 🚀")
+    extractPRData()
   }
 
   document.body.appendChild(btn)
 
   console.log("Button Injected")
+}
+
+function extractPRData() {
+  const title =
+    document
+      .querySelector('[data-component="PH_Title"]')
+      ?.textContent?.trim() ||
+    document
+      .querySelector(".js-issue-title")
+      ?.textContent?.trim() ||
+    "Title not found"
+
+  const url = window.location.href
+
+  const parts = window.location.pathname.split("/")
+
+  const owner = parts[1]
+  const repository = parts[2]
+
+  const prData = {
+    title,
+    owner,
+    repository,
+    url
+  }
+
+  console.log("PR DATA", prData)
+
+  alert(`
+PR Title:
+${title}
+
+Repository:
+${owner}/${repository}
+  `)
 }
 
 setTimeout(injectButton, 3000)
