@@ -5,9 +5,13 @@ export const config = {
 console.log("ReviewGenie Loaded")
 
 function injectButton() {
-  if (!window.location.pathname.includes("/pull/")) return
+  if (!window.location.pathname.includes("/pull/")) {
+    return
+  }
 
-  if (document.getElementById("reviewgenie-btn")) return
+  if (document.getElementById("reviewgenie-btn")) {
+    return
+  }
 
   const btn = document.createElement("button")
 
@@ -24,7 +28,9 @@ function injectButton() {
     color: "white",
     border: "2px solid white",
     borderRadius: "8px",
-    cursor: "pointer"
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "bold"
   })
 
   btn.onclick = () => {
@@ -45,15 +51,42 @@ function extractDiff() {
     .map((container) => container.textContent || "")
     .join("\n")
 
+  console.log("Diff Length:", diff.length)
+
   return diff
+}
+
+async function reviewPR(prData: any) {
+  try {
+    const response = await fetch(
+      "http://localhost:3000/api/review",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(prData)
+      }
+    )
+
+    const result = await response.json()
+
+    console.log("AI REVIEW:", result)
+
+    showSidebar({
+      ...prData,
+      aiReview: result
+    })
+  } catch (error) {
+    console.error("Review API Error:", error)
+  }
 }
 
 function extractPRData() {
   const title =
     document
       .querySelector('[data-component="PH_Title"]')
-      ?.textContent?.trim() ||
-    "Title not found"
+      ?.textContent?.trim() || "Title not found"
 
   const url = window.location.href
 
@@ -84,7 +117,7 @@ function extractPRData() {
 
   console.log("PR DATA:", prData)
 
-  showSidebar(prData)
+  reviewPR(prData)
 }
 
 function showSidebar(prData: any) {
@@ -102,13 +135,14 @@ function showSidebar(prData: any) {
     position: "fixed",
     top: "0",
     right: "0",
-    width: "400px",
+    width: "450px",
     height: "100vh",
-    background: "#fff",
+    background: "#ffffff",
     borderLeft: "1px solid #ddd",
     zIndex: "2147483647",
     padding: "20px",
-    overflowY: "auto"
+    overflowY: "auto",
+    boxShadow: "-4px 0 12px rgba(0,0,0,0.15)"
   })
 
   sidebar.innerHTML = `
@@ -124,7 +158,7 @@ function showSidebar(prData: any) {
 
     <ul>
       ${prData.changedFiles
-        .map((file) => `<li>${file}</li>`)
+        .map((file: string) => `<li>${file}</li>`)
         .join("")}
     </ul>
 
@@ -140,6 +174,29 @@ function showSidebar(prData: any) {
     ">
 ${prData.diff.substring(0, 1000)}
     </pre>
+
+    ${
+      prData.aiReview
+        ? `
+          <h3>AI Summary</h3>
+          <p>${prData.aiReview.summary}</p>
+
+          <h3>Issues</h3>
+          <ul>
+            ${prData.aiReview.issues
+              .map((issue: string) => `<li>${issue}</li>`)
+              .join("")}
+          </ul>
+
+          <h3>Suggestions</h3>
+          <ul>
+            ${prData.aiReview.suggestions
+              .map((suggestion: string) => `<li>${suggestion}</li>`)
+              .join("")}
+          </ul>
+        `
+        : ""
+    }
   `
 
   document.body.appendChild(sidebar)
